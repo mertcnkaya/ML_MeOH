@@ -51,7 +51,7 @@ param_grid = {
 
 
 # === Load dataset from Pressure-Drop sheet ===
-file_path = 'C:\\Users\\gh4617\\Desktop\\Preselection_tool\\experimental_results_v4.xlsx'
+file_path = //GIVE YOUR PATH
 df = pd.read_excel(file_path, sheet_name='Pressure-Drop')
 
 # === Select relevant columns ===
@@ -308,3 +308,4 @@ example_avg_diff = predict_average_diff_rf(
     diff_max=5.0
 )
 print(f"\nExample Predicted Average_Diff (m/s): {example_avg_diff:.5f}")
+
