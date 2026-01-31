@@ -51,7 +51,7 @@ param_grid = {
 
 
 # === 1. Load dataset ===
-file_path = 'C:\\Users\\gh4617\\Desktop\\Preselection_tool\\experimental_results_v4.xlsx'
+file_path =  //GIVE PATH HERE
 df = pd.read_excel(file_path, sheet_name='Heat_Transfer')
 
 # === 2. Select features and target “kappa” ===
@@ -327,3 +327,4 @@ example_result = predict_kappa(
     T_in_Oil=60.81
 )
 print(f"\nExample Predicted kappa (with validation): {example_result:.4f}")
+
