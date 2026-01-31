@@ -332,7 +332,6 @@ def select_candidate(df_top5, timeout_ms=60000):
 # =============================================================================
 
 if __name__=="__main__":
-    # sampling step defined here to avoid NameError in generate_design_space
     step_mm = 0.1
 
     df_design = generate_design_space(volume_input)
@@ -340,7 +339,6 @@ if __name__=="__main__":
         print("No valid combinations for volume =", volume_input_cm3, "cm³")
         sys.exit(0)
 
-    # Compute dynamic N2 setpoint & per-channel value
     df_design['N2_setpoint_NmLmin'] = df_design.apply(
         lambda r: compute_N2_setpoint_from_Re(
             Q_mix_norm_NmLmin, y_CO2, y_H2, T_mix, P_mix,
@@ -350,18 +348,15 @@ if __name__=="__main__":
     )
     df_design['N2_per_channel'] = df_design['N2_setpoint_NmLmin'] / df_design['channel_count']
 
-    # --- Batch ML predictions ---
     n = len(df_design)
     geoms  = df_design['Geometry-Type'].values
     areas  = df_design['cross_A (m3)'].values
     lens   = df_design['length (m)'].values
     N2pc   = df_design['N2_per_channel'].values
 
-    # If your heat/radial models were trained with temperatures in °C, convert here:
     Tn2 = np.full(n, T_mix - 273.15)  # change to T_mix if trained in K
     Toil = np.full(n, 60.0)           # example oil temp; adjust to match training
 
-    # ----- Heat & radial: safe OHE (handles unknown cats) -> scale -> predict
     ohe_h = safe_ohe_batch(enc_heat, geoms)
     Xh_raw = np.hstack((ohe_h, areas.reshape(n,1), lens.reshape(n,1), N2pc.reshape(n,1), Tn2.reshape(n,1), Toil.reshape(n,1)))
     Xh = scaler_X_heat.transform(Xh_raw)
@@ -377,7 +372,6 @@ if __name__=="__main__":
         rf_radial.predict(Xr).reshape(-1,1)
     )[:,0]
 
-    # ----- Pressure & flow: safe OHE -> scale -> predict
     ohe_p = safe_ohe_batch(enc_pressure, geoms)
     Xp_raw = np.hstack((ohe_p, areas.reshape(n,1), lens.reshape(n,1), N2pc.reshape(n,1)))
     Xp     = scaler_X_pressure.transform(Xp_raw)
@@ -393,7 +387,6 @@ if __name__=="__main__":
         rf_flow.predict(Xf).reshape(-1,1)
     )[:,0]
 
-    # Lateral area for each channel and total heat transfer
     def lateral_area(row):
         geom = row['Geometry-Type']
         L = row['length (m)']
@@ -407,8 +400,6 @@ if __name__=="__main__":
 
     df_design['lateral_area (m2)'] = df_design.apply(lateral_area, axis=1)
 
-    # Corrected overall heat transfer capacity with material/thickness correction
-    # (units: convert thicknesses from mm to m inside the resistance expression)
     df_design['q_K (W)'] = (
         1.0 / (1.0/df_design['kappa_sim (W/m·K)'] + w/(lambda_realApp*1000.0) - w_test/(lambda_test*1000.0))
         * df_design['lateral_area (m2)']
@@ -417,10 +408,8 @@ if __name__=="__main__":
 
     df_design['delta_Q'] = heat_reaction - df_design['q_K (W)']
 
-    # Save raw design space (pre-filter)
     df_design.to_csv("design_space.csv", index=False, float_format="%.12g")
 
-    # --- Basic filtering ---
     df_design = df_design[df_design['radial_diff (°C)'] <= 0.5]
     df_design = df_design[df_design['pressure_drop (bar)'] <= 1.0]
     df_design = df_design[df_design['avg_diff (m/s)']      <= 0.1]
@@ -430,7 +419,6 @@ if __name__=="__main__":
         print("No candidates remain after filtering.")
         sys.exit(0)
 
-    # Prepare TOPSIS
     df_small = df_design[[
         'Geometry-Type','kappa_sim (W/m·K)',
         'pressure_drop (bar)','length (m)',
@@ -450,12 +438,10 @@ if __name__=="__main__":
     )
     df_design['volume_from_dims'] = df_design['cross_A (m3)']*df_design['length (m)']*df_design['channel_count']
 
-    # Export full set
     df_small.assign(**{'Efficiency (%)': (df_small['topsis_score']*100).round(1)}) \
            .to_csv("candidates_predictions.csv", index=False)
     print(f"Exported {len(df_small)} candidates to 'candidates_predictions.csv'.")
-
-    # Show top 5
+    
     top5 = df_small.nlargest(5, 'topsis_score').reset_index(drop=True)
     final = pd.DataFrame({
         'Geometry-Type': top5['Geometry-Type'],
@@ -493,3 +479,4 @@ if __name__=="__main__":
             f.write(f"flowPath;FlowPath_1.gh\n")
             f.write(f"skin;Skin_1.gh\n")
             f.write(f"side_b;{chosen['side_b (mm)']:.3f}\n")
+
