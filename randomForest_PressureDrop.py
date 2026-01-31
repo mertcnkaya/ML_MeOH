@@ -59,7 +59,7 @@ param_grid = {
 
 
 # === Load dataset from Pressure-Drop sheet ===
-file_path = 'C:\\Users\\gh4617\\Desktop\\Preselection_tool\\experimental_results_v4.xlsx'
+file_path = //GIVE PATH HERE
 df = pd.read_excel(file_path, sheet_name='Pressure-Drop')
 
 # === Select relevant columns ===
@@ -317,3 +317,4 @@ example_pressure_drop = predict_pressure_drop_rf(
     pressure_max=10.0
 )
 print(f"\nExample Predicted pressure_abs_in_bar_corrected (with validation): {example_pressure_drop:.5f} bar")
+
