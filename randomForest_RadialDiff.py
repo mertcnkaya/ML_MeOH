@@ -55,7 +55,7 @@ param_grid = {
 
 
 # === Load dataset ===
-file_path = 'C:\\Users\\gh4617\\Desktop\\Preselection_tool\\experimental_results_v4.xlsx'
+file_path = //GIVE PATH HERE
 df = pd.read_excel(file_path, sheet_name='Heat_Transfer')
 
 # === Select features and target column for radial temperature difference ===
@@ -316,3 +316,4 @@ example_radial_diff = predict_radial_diff_rf(
     T_in_Oil=60.0
 )
 print(f"\nExample Predicted Max_radial_difference_Outlet_Simulation (°C): {example_radial_diff:.5f} °C")
+
